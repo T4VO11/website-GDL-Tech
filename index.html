@@ -1,0 +1,1488 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GDL Tech | Desarrollo de Software</title>
+    
+    <!-- Tailwind CSS para estilizado rápido y moderno -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Iconos Lucide -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Google Fonts: Inter para texto y JetBrains Mono para código -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        bgDark: '#1A1B41',
+                        cardDark: '#1E293B',
+                        accent: '#06b6d4', // Cian
+                        secondary: '#8b5cf6', // Violeta
+                        rubs: '#f97316', // Naranja para RUBS
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* --- ESTILOS RESTAURADOS --- */
+        body {
+            background-color: #1A1B41; /* Fondo oscuro restaurado */
+            color: #e2e8f0;
+            overflow-x: hidden;
+        }
+
+        /* Scrollbar estilo terminal */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 5px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+
+        /* Efecto de parpadeo del cursor */
+        .cursor-blink {
+            animation: blink 1s step-end infinite;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        /* Clases para animación al hacer scroll */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s ease-out;
+        }
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Fondo de malla animada */
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.4;
+        }
+        
+        .glass-nav {
+            background: rgba(26, 27, 65, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .code-card:hover {
+            border-color: #06b6d4;
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.2);
+            transform: translateY(-5px);
+        }
+
+        /* Ocultar scrollbar en carrusel pero permitir scroll */
+        .hide-scroll::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scroll {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* --- ESTILOS DIAGRAMA 3D (NUEVOS) --- */
+        .perspective-container {
+            perspective: 1200px;
+        }
+        .diagram-3d {
+            transform-style: preserve-3d;
+            transform: rotateX(25deg) scale(0.9);
+            transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            background: rgba(15, 23, 42, 0.95); /* Slate 900 casi opaco */
+        }
+        .perspective-container:hover .diagram-3d {
+            transform: rotateX(0deg) scale(1);
+            box-shadow: 0 10px 30px -10px rgba(6, 182, 212, 0.3);
+        }
+
+        /* Estilos específicos para las Tablas del ERD */
+        .erd-table {
+            background: rgba(30, 41, 59, 0.8); /* Card Dark */
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            color: #cbd5e1;
+            position: absolute;
+            width: 140px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            backdrop-filter: blur(4px);
+        }
+        .erd-table:hover {
+            border-color: #06b6d4; /* Accent color */
+            transform: translateZ(20px); /* Efecto pop-up 3d */
+            box-shadow: 0 10px 15px -3px rgba(6, 182, 212, 0.2);
+            z-index: 50;
+        }
+        .erd-header {
+            background: rgba(15, 23, 42, 0.8);
+            padding: 6px;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+            font-weight: bold;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .erd-header::before {
+            content: '::';
+            color: #06b6d4;
+        }
+        .erd-row {
+            padding: 3px 6px;
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.05);
+        }
+        .erd-row:last-child {
+            border-bottom: none;
+        }
+        .erd-type {
+            color: #64748b;
+            font-size: 9px;
+        }
+        .erd-pk {
+            color: #f59e0b; /* Yellow for Primary Keys */
+            margin-right: 4px;
+        }
+        
+        /* Líneas de conexión SVG */
+        .connection-lines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .connection-path {
+            fill: none;
+            stroke: #475569;
+            stroke-width: 1.5;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body class="antialiased font-sans relative text-lg">
+
+    <!-- Fondo Animado -->
+    <div id="canvas-container">
+        <canvas id="neuro"></canvas>
+    </div>
+
+    <!-- Navegación -->
+    <nav class="fixed w-full top-0 z-50 glass-nav transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-20"> 
+                <div class="flex-shrink-0 font-mono font-bold text-3xl text-accent"> 
+                    &lt;GDL_Tech /&gt;
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-8 font-mono text-base"> 
+                        <a href="#home" class="hover:text-accent transition-colors px-3 py-2">~/inicio</a>
+                        <a href="#projects" class="hover:text-accent transition-colors px-3 py-2">~/proyectos</a>
+                        <a href="#team" class="hover:text-accent transition-colors px-3 py-2">~/equipo</a>
+                        <a href="#contact" class="text-bgDark bg-accent hover:bg-white hover:text-bgDark transition-all px-4 py-2 rounded font-bold">git push contact</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="h-screen flex items-center justify-center relative overflow-hidden px-4">
+        <div class="text-center max-w-5xl mx-auto z-10"> 
+            <p class="text-accent font-mono mb-6 reveal text-xl md:text-2xl">echo "Hello, World!";</p> 
+            <h1 class="text-6xl md:text-8xl font-bold mb-8 tracking-tight reveal leading-tight"> 
+                Innovación Digital desde <br>
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-600">Guadalajara</span>
+            </h1>
+            <p class="text-slate-400 text-2xl md:text-3xl mb-10 max-w-3xl mx-auto reveal font-light leading-relaxed"> 
+                Arquitectura de software escalable. Código limpio. Resultados de alto impacto.
+            </p>
+            <div class="flex justify-center gap-6 reveal text-lg font-bold"> 
+                <a href="#team" class="border border-accent text-accent hover:bg-accent hover:text-bgDark px-10 py-4 rounded font-mono transition-all duration-300">
+                    Ver Squad
+                </a>
+                <a href="#projects" class="bg-slate-800 hover:bg-slate-700 text-white px-10 py-4 rounded font-mono transition-all duration-300">
+                    Ver Repositorios
+                </a>
+            </div>
+        </div>
+        
+        <!-- Elemento decorativo estilo terminal -->
+        <div class="absolute bottom-10 right-10 hidden lg:block p-6 rounded-lg bg-black/50 border border-slate-700 font-mono text-sm text-slate-400 w-80 backdrop-blur-sm"> 
+            <div class="flex gap-2 mb-4">
+                <div class="w-3.5 h-3.5 rounded-full bg-red-500"></div>
+                <div class="w-3.5 h-3.5 rounded-full bg-yellow-500"></div>
+                <div class="w-3.5 h-3.5 rounded-full bg-green-500"></div>
+            </div>
+            <p><span class="text-green-400">➜</span> <span class="text-cyan-400">~</span> git status</p>
+            <p>On branch main</p>
+            <p>Your branch is up to date.</p>
+            <p class="mt-2"><span class="text-green-400">➜</span> <span class="text-cyan-400">~</span> npm run build<span class="cursor-blink">_</span></p>
+        </div>
+    </section>
+
+    <!-- Stats / Tech Stack Strip -->
+    <div class="border-y border-slate-800 bg-black/20 py-10">
+        <div class="max-w-7xl mx-auto px-4 flex flex-wrap justify-center gap-12 md:gap-20 grayscale hover:grayscale-0 transition-all duration-500 opacity-70">
+            <i data-lucide="code-2" class="w-10 h-10 text-slate-400"></i>
+            <i data-lucide="database" class="w-10 h-10 text-slate-400"></i>
+            <i data-lucide="server" class="w-10 h-10 text-slate-400"></i>
+            <i data-lucide="cpu" class="w-10 h-10 text-slate-400"></i>
+            <i data-lucide="cloud" class="w-10 h-10 text-slate-400"></i>
+        </div>
+    </div>
+
+    <!-- About Us Section -->
+    <section id="about" class="py-24 relative overflow-hidden bg-gradient-to-b from-bgDark to-cardDark/30">
+        <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+            <!-- Intro "Who We Are" -->
+            <div class="text-center mb-20 reveal max-w-5xl mx-auto">
+                <h2 class="text-4xl md:text-6xl font-bold mb-8">Who <span class="text-accent">We Are</span></h2>
+                <p class="text-slate-300 text-xl md:text-2xl leading-relaxed font-light">
+                    We are a leading software management and development company. Our commitment is to provide high-quality services and ensure customer satisfaction. We have a team of highly trained experts dedicated to handling every detail with professionalism and precision.
+                </p>
+            </div>
+
+            <!-- Grid: Mission, Vision, Goals -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-24 reveal">
+                <!-- Mission -->
+                <div class="bg-cardDark p-10 rounded-2xl border border-slate-700 hover:border-accent transition-all group shadow-xl flex flex-col">
+                    <div class="bg-slate-800 w-20 h-20 rounded-xl flex items-center justify-center mb-8 group-hover:bg-accent transition-colors duration-300">
+                        <i data-lucide="rocket" class="w-10 h-10 text-white"></i>
+                    </div>
+                    <h3 class="text-3xl font-bold text-white mb-6">Mission</h3>
+                    <p class="text-slate-300 text-lg md:text-xl leading-relaxed flex-grow">
+                        Create efficient IT solutions through the development and management of software that translates into improvements in the production processes of our clients and partners.
+                    </p>
+                </div>
+
+                <!-- Vision -->
+                <div class="bg-cardDark p-10 rounded-2xl border border-slate-700 hover:border-purple-500 transition-all group shadow-xl flex flex-col">
+                    <div class="bg-slate-800 w-20 h-20 rounded-xl flex items-center justify-center mb-8 group-hover:bg-purple-500 transition-colors duration-300">
+                        <i data-lucide="eye" class="w-10 h-10 text-white"></i>
+                    </div>
+                    <h3 class="text-3xl font-bold text-white mb-6">Vision</h3>
+                    <p class="text-slate-300 text-lg md:text-xl leading-relaxed flex-grow">
+                        To be the leading company in Guadalajara on Information Technology solutions, achieving recognition as a company that adds value to the businesses of our clients, partners, and the IT industry in general.
+                    </p>
+                </div>
+
+                <!-- Goals -->
+                <div class="bg-cardDark p-10 rounded-2xl border border-slate-700 hover:border-green-500 transition-all group shadow-xl flex flex-col">
+                    <div class="bg-slate-800 w-20 h-20 rounded-xl flex items-center justify-center mb-8 group-hover:bg-green-500 transition-colors duration-300">
+                        <i data-lucide="target" class="w-10 h-10 text-white"></i>
+                    </div>
+                    <h3 class="text-3xl font-bold text-white mb-6">Goals</h3>
+                    <ul class="text-slate-300 text-lg md:text-xl leading-relaxed space-y-4 list-decimal list-inside flex-grow font-light">
+                        <li>Offer quality software solutions.</li>
+                        <li>Offer technological innovation in every project.</li>
+                        <li>Ensure customer satisfaction.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Values Strip -->
+            <div class="reveal bg-slate-900/50 rounded-2xl border border-slate-800 p-8 md:p-14">
+                <h3 class="text-3xl md:text-5xl font-bold text-center mb-16 text-white">Our <span class="text-secondary">Core Values</span></h3>
+                
+                <!-- Grid actualizado para 6 valores (3 columnas en pantallas medianas/grandes) -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-16">
+                    
+                    <!-- Honesty -->
+                    <div class="flex flex-col items-center text-center">
+                        <div class="p-5 bg-black/40 rounded-full mb-6 border border-slate-700 hover:border-accent transition-colors">
+                            <i data-lucide="message-square" class="w-10 h-10 text-accent"></i>
+                        </div>
+                        <h4 class="text-2xl font-bold text-white mb-3">Honesty</h4>
+                        <p class="text-slate-400 text-lg">We speak and act clearly.</p>
+                    </div>
+
+                    <!-- Innovation -->
+                    <div class="flex flex-col items-center text-center">
+                        <div class="p-5 bg-black/40 rounded-full mb-6 border border-slate-700 hover:border-purple-500 transition-colors">
+                            <i data-lucide="lightbulb" class="w-10 h-10 text-purple-500"></i>
+                        </div>
+                        <h4 class="text-2xl font-bold text-white mb-3">Innovation</h4>
+                        <p class="text-slate-400 text-lg">Assertive solutions for your projects.</p>
+                    </div>
+
+                    <!-- Professional Ethics -->
+                    <div class="flex flex-col items-center text-center">
+                        <div class="p-5 bg-black/40 rounded-full mb-6 border border-slate-700 hover:border-yellow-500 transition-colors">
+                            <i data-lucide="scale" class="w-10 h-10 text-yellow-500"></i>
+                        </div>
+                        <h4 class="text-2xl font-bold text-white mb-3">Professional Ethics</h4>
+                        <p class="text-slate-400 text-lg">Compliance with IT regulations.</p>
+                    </div>
+
+                    <!-- Teamwork -->
+                    <div class="flex flex-col items-center text-center">
+                        <div class="p-5 bg-black/40 rounded-full mb-6 border border-slate-700 hover:border-green-500 transition-colors">
+                            <i data-lucide="users" class="w-10 h-10 text-green-500"></i>
+                        </div>
+                        <h4 class="text-2xl font-bold text-white mb-3">Teamwork</h4>
+                        <p class="text-slate-400 text-lg">Every collaborator is a necessary pillar.</p>
+                    </div>
+
+                    <!-- Responsibility -->
+                    <div class="flex flex-col items-center text-center">
+                        <div class="p-5 bg-black/40 rounded-full mb-6 border border-slate-700 hover:border-pink-500 transition-colors">
+                            <i data-lucide="check-circle" class="w-10 h-10 text-pink-500"></i>
+                        </div>
+                        <h4 class="text-2xl font-bold text-white mb-3">Responsibility</h4>
+                        <p class="text-slate-400 text-lg">Work delivered on time and correctly.</p>
+                    </div>
+
+                    <!-- Confidentiality -->
+                    <div class="flex flex-col items-center text-center">
+                        <div class="p-5 bg-black/40 rounded-full mb-6 border border-slate-700 hover:border-rubs transition-colors">
+                            <i data-lucide="lock" class="w-10 h-10 text-rubs"></i> 
+                        </div>
+                        <h4 class="text-2xl font-bold text-white mb-3">Confidentiality</h4>
+                        <p class="text-slate-400 text-lg">Correct handling of private information.</p>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Team Section -->
+    <section id="team" class="py-24 relative overflow-hidden">
+        <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16 reveal">
+                <h2 class="text-4xl md:text-6xl font-bold mb-6">Nuestro Squad <span class="text-accent">.dev</span></h2>
+                <p class="text-slate-400 font-mono text-lg">git commit -m "Meet the team"</p>
+            </div>
+
+            <div class="flex flex-wrap justify-center gap-8">
+                
+                <!-- Dev 1: Lead (Francisco) -->
+                <div class="w-full sm:w-[320px] lg:w-[260px] xl:w-[280px] group bg-cardDark border border-slate-700 rounded-xl code-card transition-all duration-300 reveal overflow-hidden flex flex-col">
+                    <div class="h-80 w-full overflow-hidden relative">
+                        <div class="absolute inset-0 bg-gradient-to-t from-cardDark to-transparent opacity-60 z-10"></div>
+                        <img src="Francisco.jpg" alt="Francisco P." class="w-full h-full object-cover object-top group-hover:scale-110 transition-transform duration-500">
+                    </div>
+                    <div class="p-6 relative z-20 -mt-16 bg-gradient-to-t from-cardDark via-cardDark to-transparent pt-10">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="text-2xl font-bold text-white">Francisco P.</h3>
+                            <i data-lucide="terminal" class="text-accent w-6 h-6"></i>
+                        </div>
+                        <p class="text-accent text-sm font-mono mb-4">Tech Lead / Full Stack</p>
+                        <p class="text-slate-300 text-sm mb-5 leading-relaxed font-light">Arquitecto de soluciones. Obsesionado con el Clean Code.</p>
+                        <div class="flex flex-wrap gap-2 text-xs font-mono font-bold">
+                            <span class="px-2 py-1 rounded bg-slate-800 text-cyan-300 border border-slate-700">React</span>
+                            <span class="px-2 py-1 rounded bg-slate-800 text-cyan-300 border border-slate-700">Node</span>
+                            <span class="px-2 py-1 rounded bg-slate-800 text-cyan-300 border border-slate-700">AWS</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dev 2: Backend (Ulises) -->
+                <div class="w-full sm:w-[320px] lg:w-[260px] xl:w-[280px] group bg-cardDark border border-slate-700 rounded-xl code-card transition-all duration-300 reveal overflow-hidden flex flex-col">
+                    <div class="h-80 w-full overflow-hidden relative">
+                        <div class="absolute inset-0 bg-gradient-to-t from-cardDark to-transparent opacity-60 z-10"></div>
+                        <img src="Ulises.jpg" alt="Ulises A." class="w-full h-full object-cover object-top group-hover:scale-110 transition-transform duration-500">
+                    </div>
+                    <div class="p-6 relative z-20 -mt-16 bg-gradient-to-t from-cardDark via-cardDark to-transparent pt-10">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="text-2xl font-bold text-white">Ulises A.</h3>
+                            <i data-lucide="database" class="text-purple-500 w-6 h-6"></i>
+                        </div>
+                        <p class="text-purple-400 text-sm font-mono mb-4">Backend Specialist</p>
+                        <p class="text-slate-300 text-sm mb-5 leading-relaxed font-light">Maestro de las APIs y bases de datos. Optimización pura.</p>
+                        <div class="flex flex-wrap gap-2 text-xs font-mono font-bold">
+                            <span class="px-2 py-1 rounded bg-slate-800 text-purple-300 border border-slate-700">Python</span>
+                            <span class="px-2 py-1 rounded bg-slate-800 text-purple-300 border border-slate-700">Express</span>
+                            <span class="px-2 py-1 rounded bg-slate-800 text-purple-300 border border-slate-700">PHP</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dev 3: IoT (Andrea) - ACTUALIZADO -->
+                <div class="w-full sm:w-[320px] lg:w-[260px] xl:w-[280px] group bg-cardDark border border-slate-700 rounded-xl code-card transition-all duration-300 reveal overflow-hidden flex flex-col">
+                    <div class="h-80 w-full overflow-hidden relative">
+                        <div class="absolute inset-0 bg-gradient-to-t from-cardDark to-transparent opacity-60 z-10"></div>
+                        <img src="Andrea.jpg" alt="Andrea C." class="w-full h-full object-cover object-top group-hover:scale-110 transition-transform duration-500">
+                    </div>
+                    <div class="p-6 relative z-20 -mt-16 bg-gradient-to-t from-cardDark via-cardDark to-transparent pt-10">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="text-2xl font-bold text-white">Andrea C.</h3>
+                            <i data-lucide="cpu" class="text-pink-500 w-6 h-6"></i>
+                        </div>
+                        <p class="text-pink-400 text-sm font-mono mb-4">IoT Developer</p>
+                        <p class="text-slate-300 text-sm mb-5 leading-relaxed font-light">Conecta el mundo físico con el digital via sensores y hardware.</p>
+                        <div class="flex flex-wrap gap-2 text-xs font-mono font-bold">
+                            <span class="px-2 py-1 rounded bg-slate-800 text-pink-300 border border-slate-700">C++</span>
+                            <span class="px-2 py-1 rounded bg-slate-800 text-pink-300 border border-slate-700">ESP32</span>
+                            <span class="px-2 py-1 rounded bg-slate-800 text-pink-300 border border-slate-700">Arduino</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dev 4: Mobile/UX (Octavio) -->
+                <div class="w-full sm:w-[320px] lg:w-[260px] xl:w-[280px] group bg-cardDark border border-slate-700 rounded-xl code-card transition-all duration-300 reveal overflow-hidden flex flex-col">
+                    <div class="h-80 w-full overflow-hidden relative">
+                        <div class="absolute inset-0 bg-gradient-to-t from-cardDark to-transparent opacity-60 z-10"></div>
+                        <img src="Octavio.jpg" alt="Octavio G." class="w-full h-full object-cover object-top group-hover:scale-110 transition-transform duration-500">
+                    </div>
+                    <div class="p-6 relative z-20 -mt-16 bg-gradient-to-t from-cardDark via-cardDark to-transparent pt-10">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="text-2xl font-bold text-white">Octavio G.</h3>
+                            <i data-lucide="smartphone" class="text-green-500 w-6 h-6"></i>
+                        </div>
+                        <p class="text-green-400 text-sm font-mono mb-4">Mobile & UX</p>
+                        <p class="text-slate-300 text-sm mb-5 leading-relaxed font-light">Especialista en interfaces nativas y diseño centrado en usuario.</p>
+                        <div class="flex flex-wrap gap-2 text-xs font-mono font-bold">
+                            <span class="px-2 py-1 rounded bg-slate-800 text-green-300 border border-slate-700">Angular</span>
+                            <span class="px-2 py-1 rounded bg-slate-800 text-green-300 border border-slate-700">Flet</span>
+                            <span class="px-2 py-1 rounded bg-slate-800 text-green-300 border border-slate-700">Figma</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dev 5: DevOps (Ema) -->
+                <div class="w-full sm:w-[320px] lg:w-[260px] xl:w-[280px] group bg-cardDark border border-slate-700 rounded-xl code-card transition-all duration-300 reveal overflow-hidden flex flex-col">
+                    <div class="h-80 w-full overflow-hidden relative">
+                        <div class="absolute inset-0 bg-gradient-to-t from-cardDark to-transparent opacity-60 z-10"></div>
+                        <img src="Ema.jpg" alt="Abraham E" class="w-full h-full object-cover object-top group-hover:scale-110 transition-transform duration-500">
+                    </div>
+                    <div class="p-6 relative z-20 -mt-16 bg-gradient-to-t from-cardDark via-cardDark to-transparent pt-10">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="text-2xl font-bold text-white">Abraham E.</h3>
+                            <i data-lucide="container" class="text-orange-500 w-6 h-6"></i>
+                        </div>
+                        <p class="text-orange-400 text-sm font-mono mb-4">DevOps Engineer</p>
+                        <p class="text-slate-300 text-sm mb-5 leading-relaxed font-light">Automatización, CI/CD y nubes. Infraestructura sólida.</p>
+                        <div class="flex flex-wrap gap-2 text-xs font-mono font-bold">
+                            <span class="px-2 py-1 rounded bg-slate-800 text-orange-300 border border-slate-700">Mongo</span>
+                            <span class="px-2 py-1 rounded bg-slate-800 text-orange-300 border border-slate-700">SQL</span>
+                            <span class="px-2 py-1 rounded bg-slate-800 text-orange-300 border border-slate-700">Cloud</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Join Card
+                <div class="w-full sm:w-[320px] lg:w-[260px] xl:w-[280px] flex flex-col items-center justify-center bg-transparent border-2 border-dashed border-slate-700 rounded-xl hover:border-accent hover:bg-slate-800/30 transition-all duration-300 reveal cursor-pointer group min-h-[400px]">
+                    <i data-lucide="plus" class="w-16 h-16 text-slate-600 group-hover:text-accent mb-6 transition-colors"></i>
+                    <h3 class="text-2xl font-bold text-slate-300 group-hover:text-white">Join the Team</h3>
+                    <p class="text-slate-500 text-sm mt-3 font-mono">gdl_tech hiring --now</p>
+                </div> -->
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Project Highlight Carousel Section -->
+    <section id="projects" class="py-24 relative bg-gradient-to-b from-bgDark to-black/40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="mb-16 reveal flex flex-col md:flex-row justify-between items-end">
+                <div>
+                    <h2 class="text-4xl md:text-6xl font-bold mb-6">Proyectos <span class="text-secondary">Flagship</span></h2>
+                    <div class="flex items-center gap-3 text-slate-400 font-mono text-lg">
+                        <span class="text-green-400">➜</span>
+                        <span>git log --oneline --graph</span>
+                    </div>
+                </div>
+                <!-- Updated Instruction -->
+                <div class="hidden md:flex gap-2 text-slate-500 text-base font-mono mt-4 md:mt-0">
+                    <span>&lt; Usa las flechas o la rueda del mouse para navegar &gt;</span>
+                </div>
+            </div>
+
+            <!-- Carousel Container Wrapper with Buttons -->
+            <div class="relative group">
+                
+                <!-- Button Prev -->
+                <button id="prevBtn" class="absolute left-0 top-1/2 -translate-y-1/2 -ml-4 md:-ml-12 z-20 bg-black/60 hover:bg-accent text-white p-4 rounded-full backdrop-blur-sm border border-slate-700 transition-all hidden md:flex items-center justify-center hover:scale-110 active:scale-95 shadow-xl">
+                    <i data-lucide="chevron-left" class="w-10 h-10"></i>
+                </button>
+
+                <!-- Carousel Container -->
+                <div id="projectsContainer" class="flex overflow-x-auto snap-x snap-mandatory gap-8 pb-10 hide-scroll scroll-smooth relative z-10">
+                    
+                    <!-- Project Card 1: Cuarta500 -->
+                    <div class="min-w-full md:min-w-[90%] lg:min-w-[100%] snap-center bg-cardDark border border-slate-700 rounded-2xl overflow-hidden shadow-2xl reveal group hover:border-accent transition-all duration-500">
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-0 h-full">
+                            
+                            <!-- Content Side -->
+                            <div class="p-10 md:p-14 flex flex-col justify-center relative">
+                                <div class="absolute top-0 right-0 p-8 opacity-10">
+                                    <i data-lucide="wifi" class="w-40 h-40 text-white"></i>
+                                </div>
+                                
+                                <div class="inline-flex items-center gap-3 mb-6">
+                                    <span class="px-4 py-1.5 rounded-full bg-accent/10 text-accent text-sm font-mono border border-accent/20">En Desarrollo</span>
+                                    <span class="px-4 py-1.5 rounded-full bg-purple-500/10 text-purple-400 text-sm font-mono border border-purple-500/20">IoT Ecosystem</span>
+                                </div>
+
+                                <h3 class="text-4xl md:text-5xl font-bold text-white mb-6 group-hover:text-accent transition-colors">Cuarta500</h3>
+                                <p class="text-slate-300 text-xl md:text-2xl mb-10 leading-relaxed font-light">
+                                    Transformación digital integral para condominios inteligentes. Ecosistema que conecta IoT, App móvil y Cloud para automatizar seguridad y administración.
+                                </p>
+
+                                <div class="grid grid-cols-2 gap-6 mb-8">
+                                    <div class="flex items-center gap-4">
+                                        <i data-lucide="cpu" class="w-6 h-6 text-accent"></i>
+                                        <div>
+                                            <h4 class="text-white font-bold text-base">IoT Control</h4>
+                                            <p class="text-slate-500 text-sm">Sensores auto.</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-4">
+                                        <i data-lucide="shield-check" class="w-6 h-6 text-secondary"></i>
+                                        <div>
+                                            <h4 class="text-white font-bold text-base">Cifrado Militar</h4>
+                                            <p class="text-slate-500 text-sm">AES-256 sec.</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-4">
+                                        <i data-lucide="smartphone" class="w-6 h-6 text-pink-500"></i>
+                                        <div>
+                                            <h4 class="text-white font-bold text-base">Mobile First</h4>
+                                            <p class="text-slate-500 text-sm">App nativa.</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-4">
+                                        <i data-lucide="globe" class="w-6 h-6 text-orange-500"></i>
+                                        <div>
+                                            <h4 class="text-white font-bold text-base">Web Admin</h4>
+                                            <p class="text-slate-500 text-sm">Dashboard.</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Botón para abrir el modal -->
+                                <button onclick="openModal('cuartaModal')" class="mt-4 bg-slate-800 hover:bg-accent hover:text-bgDark text-white border border-slate-600 font-mono py-3 px-6 rounded-lg transition-all flex items-center gap-2 w-fit">
+                                    <i data-lucide="file-search" class="w-5 h-5"></i>
+                                    Ver Case Study & Diagrama
+                                </button>
+                            </div>
+
+                            <!-- Visual Side (Code) -->
+                            <div class="bg-black/50 p-10 flex items-center justify-center relative overflow-hidden min-h-[400px] lg:min-h-auto border-t lg:border-t-0 lg:border-l border-slate-700">
+                                <div class="absolute inset-0 bg-gradient-to-br from-accent/5 to-secondary/5"></div>
+                                <div class="w-full max-w-lg bg-slate-900 rounded-lg shadow-2xl border border-slate-700 p-6 font-mono text-sm text-slate-300 opacity-90 transform group-hover:scale-105 transition-transform duration-500">
+                                    <div class="flex gap-2 mb-4 border-b border-slate-800 pb-3">
+                                        <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                                        <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                                        <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                                        <span class="ml-auto text-slate-500 text-xs">iot_controller.js</span>
+                                    </div>
+                                    <div class="space-y-2">
+                                        <p><span class="text-purple-400">const</span> <span class="text-blue-400">gateController</span> = <span class="text-purple-400">new</span> <span class="text-yellow-300">IoTDevice</span>({</p>
+                                        <p class="pl-6">id: <span class="text-green-400">'GATE_MAIN_01'</span>,</p>
+                                        <p class="pl-6">protocol: <span class="text-green-400">'MQTT'</span>,</p>
+                                        <p class="pl-6">security: <span class="text-yellow-300">SecurityLevel</span>.HIGH</p>
+                                        <p>});</p>
+                                        <p>&nbsp;</p>
+                                        <p><span class="text-slate-500">// Listen for secure unlock</span></p>
+                                        <p><span class="text-blue-400">gateController</span>.<span class="text-yellow-300">on</span>(<span class="text-green-400">'auth_success'</span>, (<span class="text-orange-300">user</span>) => {</p>
+                                        <p class="pl-6"><span class="text-purple-400">await</span> <span class="text-blue-400">hardware</span>.<span class="text-yellow-300">openGate</span>();</p>
+                                        <p>});</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Project Card 2: RUBS Transport Solutions -->
+                    <div class="min-w-full md:min-w-[90%] lg:min-w-[100%] snap-center bg-cardDark border border-slate-700 rounded-2xl overflow-hidden shadow-2xl reveal group hover:border-rubs transition-all duration-500">
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-0 h-full">
+                            
+                            <!-- Content Side -->
+                            <div class="p-10 md:p-14 flex flex-col justify-center relative">
+                                <div class="absolute top-0 right-0 p-8 opacity-10">
+                                    <i data-lucide="truck" class="w-40 h-40 text-white"></i>
+                                </div>
+                                
+                                <div class="inline-flex items-center gap-3 mb-6">
+                                    <span class="px-4 py-1.5 rounded-full bg-green-500/10 text-green-400 text-sm font-mono border border-green-500/20">Terminado</span>
+                                    <span class="px-4 py-1.5 rounded-full bg-rubs/10 text-rubs text-sm font-mono border border-rubs/20">Logística Integral</span>
+                                </div>
+
+                                <h3 class="text-4xl md:text-5xl font-bold text-white mb-6 group-hover:text-rubs transition-colors">RUBS Transport</h3>
+                                <p class="text-slate-300 text-xl md:text-2xl mb-10 leading-relaxed font-light">
+                                    Plataforma unificada Full Stack para modernización logística. Desde el concepto UX/UI hasta un CMS personalizado, facilitando la gestión de flota y captación de clientes.
+                                </p>
+
+                                <div class="grid grid-cols-2 gap-6 mb-8">
+                                    <div class="flex items-center gap-4">
+                                        <i data-lucide="layout-template" class="w-6 h-6 text-rubs"></i>
+                                        <div>
+                                            <h4 class="text-white font-bold text-base">UX/UI Design</h4>
+                                            <p class="text-slate-500 text-sm">Identidad moderna.</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-4">
+                                        <i data-lucide="monitor-smartphone" class="w-6 h-6 text-blue-400"></i>
+                                        <div>
+                                            <h4 class="text-white font-bold text-base">Full Response</h4>
+                                            <p class="text-slate-500 text-sm">Mobile-first Web.</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-4">
+                                        <i data-lucide="database-zap" class="w-6 h-6 text-yellow-400"></i>
+                                        <div>
+                                            <h4 class="text-white font-bold text-base">Custom CMS</h4>
+                                            <p class="text-slate-500 text-sm">Gestión de flota.</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-4">
+                                        <i data-lucide="trending-up" class="w-6 h-6 text-green-400"></i>
+                                        <div>
+                                            <h4 class="text-white font-bold text-base">Lead Gen</h4>
+                                            <p class="text-slate-500 text-sm">Optimización SEO.</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Botón para abrir el modal RUBS -->
+                                <button onclick="openModal('rubsModal')" class="mt-4 bg-slate-800 hover:bg-rubs hover:text-white text-white border border-slate-600 font-mono py-3 px-6 rounded-lg transition-all flex items-center gap-2 w-fit">
+                                    <i data-lucide="file-search" class="w-5 h-5"></i>
+                                    Ver Case Study & Diagrama
+                                </button>
+                            </div>
+
+                            <!-- Visual Side (Image) -->
+                            <div class="bg-black/50 p-0 flex items-center justify-center relative overflow-hidden min-h-[400px] lg:min-h-auto border-t lg:border-t-0 lg:border-l border-slate-700 group">
+                                <div class="absolute inset-0 bg-gradient-to-br from-rubs/10 to-transparent z-10"></div>
+                                <!-- IMAGEN DEL PROYECTO RUBS -->
+                                <img src="RUBS.jpg" alt="RUBS Project Showcase" class="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700 opacity-90">
+                                
+                                <!-- Overlay Text on Hover -->
+                                <div class="absolute bottom-0 left-0 w-full p-8 bg-gradient-to-t from-black/90 to-transparent z-20 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                                    <p class="text-white font-mono text-base">Deployment: Production</p>
+                                    <p class="text-slate-400 text-sm">Stack: React, Tailwind, Node.js</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Button Next -->
+                <button id="nextBtn" class="absolute right-0 top-1/2 -translate-y-1/2 -mr-4 md:-mr-12 z-20 bg-black/60 hover:bg-accent text-white p-4 rounded-full backdrop-blur-sm border border-slate-700 transition-all hidden md:flex items-center justify-center hover:scale-110 active:scale-95 shadow-xl">
+                    <i data-lucide="chevron-right" class="w-10 h-10"></i>
+                </button>
+
+            </div>
+            
+            <!-- Carrusel Indicators -->
+            <div class="flex justify-center gap-3 mt-8">
+                <div class="w-16 h-2 bg-accent rounded-full opacity-50"></div>
+                <div class="w-16 h-2 bg-rubs rounded-full opacity-50"></div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Project Timeline / Git Style -->
+    <section class="py-24 bg-black/30">
+        <div class="max-w-7xl mx-auto px-4">
+            <h2 class="text-4xl font-bold mb-12 text-center reveal">Últimos Commits</h2>
+            <div class="space-y-8 max-w-4xl mx-auto"> <!-- Aumentado max-w y space-y -->
+                
+                <div class="flex gap-6 reveal"> <!-- Aumentado gap -->
+                    <div class="flex flex-col items-center">
+                        <div class="w-4 h-4 bg-accent rounded-full mt-2"></div>
+                        <div class="w-1 h-full bg-slate-800 mt-1"></div>
+                    </div>
+                    <div class="bg-cardDark p-6 rounded border border-slate-700 w-full hover:border-accent transition-colors">
+                        <div class="flex justify-between text-sm font-mono text-slate-500 mb-3"> <!-- Aumentado text size y margin -->
+                            <span class="font-bold text-accent">feat: e-commerce platform launch</span>
+                            <span>2h ago</span>
+                        </div>
+                        <p class="text-slate-300 text-lg">Desarrollo completo de plataforma B2B con integración SAP para cliente industrial.</p>
+                    </div>
+                </div>
+
+                <div class="flex gap-6 reveal">
+                    <div class="flex flex-col items-center">
+                        <div class="w-4 h-4 bg-purple-500 rounded-full mt-2"></div>
+                        <div class="w-1 h-full bg-slate-800 mt-1"></div>
+                    </div>
+                    <div class="bg-cardDark p-6 rounded border border-slate-700 w-full hover:border-purple-500 transition-colors">
+                        <div class="flex justify-between text-sm font-mono text-slate-500 mb-3">
+                            <span class="font-bold text-purple-400">refactor: banking app security</span>
+                            <span>2d ago</span>
+                        </div>
+                        <p class="text-slate-300 text-lg">Actualización de protocolos de encriptación y optimización de latencia en transacciones.</p>
+                    </div>
+                </div>
+
+                <div class="flex gap-6 reveal">
+                    <div class="flex flex-col items-center">
+                        <div class="w-4 h-4 bg-slate-600 rounded-full mt-2"></div>
+                    </div>
+                    <div class="bg-cardDark p-6 rounded border border-slate-700 w-full hover:border-slate-500 transition-colors">
+                        <div class="flex justify-between text-sm font-mono text-slate-500 mb-3">
+                            <span class="font-bold text-slate-400">init: startup accelerator mvp</span>
+                            <span>1w ago</span>
+                        </div>
+                        <p class="text-slate-300 text-lg">Lanzamiento de MVP para startup local de logística.</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="py-24 relative">
+        <div class="max-w-4xl mx-auto px-4 text-center reveal"> <!-- Aumentado max-w -->
+            <h2 class="text-5xl font-bold mb-8">¿Listo para desplegar tu idea?</h2>
+            <p class="text-slate-400 mb-10 text-2xl">Hablemos de código, arquitectura y café.</p>
+            
+            <form class="bg-cardDark p-10 rounded-xl border border-slate-700 shadow-2xl text-left">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                    <div>
+                        <label class="block text-sm font-mono text-accent mb-3">const name =</label>
+                        <input type="text" class="w-full bg-slate-900 border border-slate-700 rounded p-4 text-white text-lg focus:outline-none focus:border-accent font-mono" placeholder="'Tu Nombre'">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-mono text-accent mb-3">const email =</label>
+                        <input type="email" class="w-full bg-slate-900 border border-slate-700 rounded p-4 text-white text-lg focus:outline-none focus:border-accent font-mono" placeholder="'correo@empresa.com'">
+                    </div>
+                </div>
+                <div class="mb-8">
+                    <label class="block text-sm font-mono text-accent mb-3">const message =</label>
+                    <textarea class="w-full bg-slate-900 border border-slate-700 rounded p-4 text-white text-lg h-40 focus:outline-none focus:border-accent font-mono" placeholder="'Cuéntanos sobre tu proyecto...'"></textarea>
+                </div>
+                <button type="button" class="w-full bg-accent hover:bg-cyan-400 text-bgDark font-bold text-xl py-4 rounded transition-all transform hover:scale-[1.02]">
+                    console.log(enviar);
+                </button>
+            </form>
+        </div>
+    </section>
+
+    <footer class="border-t border-slate-800 py-12 mt-16 bg-black/50">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center">
+            <div class="font-mono text-slate-500 text-base">
+                &copy; 2024 GDL Tech. MIT License style.
+            </div>
+            <div class="flex space-x-8 mt-6 md:mt-0">
+                <a href="#" class="text-slate-500 hover:text-white transition-colors"><i data-lucide="github" class="w-6 h-6"></i></a>
+                <a href="#" class="text-slate-500 hover:text-white transition-colors"><i data-lucide="linkedin" class="w-6 h-6"></i></a>
+                <a href="#" class="text-slate-500 hover:text-white transition-colors"><i data-lucide="twitter" class="w-6 h-6"></i></a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- MODAL CUARTA500 -->
+    <div id="cuartaModal" class="fixed inset-0 z-[100] hidden opacity-0 transition-opacity duration-300">
+        <!-- Backdrop -->
+        <div class="absolute inset-0 bg-black/90 backdrop-blur-md" onclick="closeModal('cuartaModal')"></div>
+        
+        <!-- Modal Content -->
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[95%] max-w-6xl bg-cardDark border border-slate-700 rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+            
+            <!-- Header -->
+            <div class="p-6 border-b border-slate-700 flex justify-between items-center bg-slate-900/50">
+                <h2 class="text-3xl font-bold text-white flex items-center gap-3">
+                    <span class="bg-accent/20 text-accent p-2 rounded-lg"><i data-lucide="wifi" class="w-6 h-6"></i></span>
+                    Cuarta500: Arquitectura & Solución
+                </h2>
+                <button onclick="closeModal('cuartaModal')" class="text-slate-400 hover:text-white hover:bg-slate-700 p-2 rounded-full transition-colors">
+                    <i data-lucide="x" class="w-8 h-8"></i>
+                </button>
+            </div>
+
+            <!-- Scrollable Body -->
+            <div class="p-8 overflow-y-auto custom-scrollbar">
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-12">
+                    <!-- Problem Statement -->
+                    <div class="space-y-6">
+                        <h3 class="text-2xl font-bold text-red-400 flex items-center gap-2 border-b border-red-400/20 pb-2">
+                            <i data-lucide="alert-triangle"></i> Problem Statement
+                        </h3>
+                        
+                        <div class="space-y-4">
+                            <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-800">
+                                <h4 class="text-lg font-bold text-white mb-2">Access Management</h4>
+                                <ul class="list-disc list-inside text-slate-400 space-y-1 text-base">
+                                    <li>Inefficient entry/exit tracking for residents.</li>
+                                    <li>Manual and slow visitor registration process.</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-800">
+                                <h4 class="text-lg font-bold text-white mb-2">Service & Maintenance</h4>
+                                <ul class="list-disc list-inside text-slate-400 space-y-1 text-base">
+                                    <li>Complex fee payment collection.</li>
+                                    <li>Unorganized terrace reservations for events.</li>
+                                    <li>Slow incident reporting and tracking.</li>
+                                </ul>
+                            </div>
+
+                            <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-800">
+                                <h4 class="text-lg font-bold text-white mb-2">Financial Management</h4>
+                                <ul class="list-disc list-inside text-slate-400 space-y-1 text-base">
+                                    <li>Lack of transparency in fee usage.</li>
+                                    <li>Need for detailed reports on expenditures & invoices.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Solution -->
+                    <div class="space-y-6">
+                        <h3 class="text-2xl font-bold text-accent flex items-center gap-2 border-b border-accent/20 pb-2">
+                            <i data-lucide="check-circle-2"></i> Our Solution
+                        </h3>
+                        
+                        <div class="space-y-4">
+                            <div class="flex gap-4 p-4 bg-slate-800/30 rounded-xl border border-slate-700/50">
+                                <div class="bg-slate-700/50 p-3 rounded-lg h-fit text-accent"><i data-lucide="cpu" class="w-6 h-6"></i></div>
+                                <div>
+                                    <h4 class="text-xl font-bold text-white">IoT Module</h4>
+                                    <p class="text-slate-400 mt-1">Automated access authentication using secure codes, interfacing directly with the digital access log.</p>
+                                </div>
+                            </div>
+
+                            <div class="flex gap-4 p-4 bg-slate-800/30 rounded-xl border border-slate-700/50">
+                                <div class="bg-slate-700/50 p-3 rounded-lg h-fit text-orange-500"><i data-lucide="globe" class="w-6 h-6"></i></div>
+                                <div>
+                                    <h4 class="text-xl font-bold text-white">Web Ecosystem</h4>
+                                    <ul class="text-slate-400 mt-1 space-y-1 list-disc list-inside">
+                                        <li><strong>Admin Panel:</strong> Full control over condo management.</li>
+                                        <li><strong>Security Portal:</strong> Guard interface for entries and detail logging.</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div class="flex gap-4 p-4 bg-slate-800/30 rounded-xl border border-slate-700/50">
+                                <div class="bg-slate-700/50 p-3 rounded-lg h-fit text-pink-500"><i data-lucide="smartphone" class="w-6 h-6"></i></div>
+                                <div>
+                                    <h4 class="text-xl font-bold text-white">Mobile App</h4>
+                                    <p class="text-slate-400 mt-1">Resident app to view activity, pay fees, reserve spaces, and generate access codes.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Interactive Architecture Diagram (Abstract) -->
+                <div class="bg-black/40 rounded-2xl border border-slate-700 p-8 relative overflow-hidden mb-12">
+                    <h3 class="text-2xl font-bold text-white mb-8 text-center">System Architecture Diagram</h3>
+                    
+                    <!-- Diagram Container -->
+                    <div class="relative flex flex-col md:flex-row justify-between items-center gap-8 md:gap-4 max-w-4xl mx-auto">
+                        
+                        <!-- Left Node: Web Apps -->
+                        <div class="flex flex-col gap-4 w-full md:w-auto">
+                            <div class="bg-slate-800 border-2 border-orange-500 p-4 rounded-xl text-center w-full md:w-48 shadow-[0_0_20px_rgba(249,115,22,0.2)]">
+                                <i data-lucide="monitor" class="w-8 h-8 text-orange-500 mx-auto mb-2"></i>
+                                <h4 class="font-bold text-white">Web Admin</h4>
+                                <p class="text-xs text-slate-400">Management</p>
+                            </div>
+                            <div class="bg-slate-800 border-2 border-orange-500 p-4 rounded-xl text-center w-full md:w-48 shadow-[0_0_20px_rgba(249,115,22,0.2)]">
+                                <i data-lucide="shield" class="w-8 h-8 text-orange-500 mx-auto mb-2"></i>
+                                <h4 class="font-bold text-white">Security Web</h4>
+                                <p class="text-xs text-slate-400">Guard Interface</p>
+                            </div>
+                        </div>
+
+                        <!-- Connector Lines (Visual CSS) -->
+                        <div class="hidden md:block w-16 h-1 bg-gradient-to-r from-orange-500 to-accent"></div>
+
+                        <!-- Center Node: Cloud API -->
+                        <div class="bg-slate-900 border-2 border-accent p-8 rounded-full aspect-square flex flex-col items-center justify-center relative z-10 w-48 h-48 shadow-[0_0_40px_rgba(6,182,212,0.3)]">
+                            <div class="absolute inset-0 rounded-full border border-dashed border-slate-600 animate-spin-slow"></div>
+                            <i data-lucide="cloud" class="w-12 h-12 text-accent mb-2"></i>
+                            <h4 class="font-bold text-white text-lg">Core API</h4>
+                            <p class="text-xs text-slate-400">Database & Logic</p>
+                        </div>
+
+                        <!-- Connector Lines (Visual CSS) -->
+                        <div class="hidden md:block w-16 h-1 bg-gradient-to-r from-accent to-pink-500"></div>
+
+                        <!-- Right Node: Mobile & IoT -->
+                        <div class="flex flex-col gap-4 w-full md:w-auto">
+                            <div class="bg-slate-800 border-2 border-pink-500 p-4 rounded-xl text-center w-full md:w-48 shadow-[0_0_20px_rgba(236,72,153,0.2)]">
+                                <i data-lucide="smartphone" class="w-8 h-8 text-pink-500 mx-auto mb-2"></i>
+                                <h4 class="font-bold text-white">Mobile App</h4>
+                                <p class="text-xs text-slate-400">User View</p>
+                            </div>
+                            <div class="bg-slate-800 border-2 border-green-500 p-4 rounded-xl text-center w-full md:w-48 shadow-[0_0_20px_rgba(34,197,94,0.2)]">
+                                <i data-lucide="cpu" class="w-8 h-8 text-green-500 mx-auto mb-2"></i>
+                                <h4 class="font-bold text-white">IoT Access</h4>
+                                <p class="text-xs text-slate-400">Physical Hardware</p>
+                            </div>
+                        </div>
+
+                    </div>
+                    
+                    <!-- Background Lines for connectivity visual -->
+                    <svg class="absolute inset-0 w-full h-full pointer-events-none opacity-20" xmlns="http://www.w3.org/2000/svg">
+                        <line x1="20%" y1="30%" x2="50%" y2="50%" stroke="white" stroke-width="2" />
+                        <line x1="20%" y1="70%" x2="50%" y2="50%" stroke="white" stroke-width="2" />
+                        <line x1="80%" y1="30%" x2="50%" y2="50%" stroke="white" stroke-width="2" />
+                        <line x1="80%" y1="70%" x2="50%" y2="50%" stroke="white" stroke-width="2" />
+                    </svg>
+                </div>
+
+                <!-- Database Blueprint Holographic Projection (New Creative Section) -->
+                <div class="mt-16 text-center">
+                    <h3 class="text-3xl font-bold text-white mb-8 flex items-center justify-center gap-3">
+                        <i data-lucide="database" class="text-blue-400"></i>
+                        Data Architecture Blueprint
+                    </h3>
+                    
+                    <!-- 3D Perspective Container -->
+                    <div class="perspective-container w-full max-w-6xl mx-auto h-[700px] group relative cursor-default">
+                        
+                        <!-- The Card that rotates containing the ERD -->
+                        <div class="diagram-3d relative w-full h-full border border-slate-700/50 rounded-2xl overflow-hidden">
+                            
+                            <!-- Glossy Overlay & Grid -->
+                            <div class="absolute inset-0 bg-gradient-to-tr from-white/5 to-transparent pointer-events-none z-20"></div>
+                            <div class="absolute inset-0 bg-[url('https://patterns.ibrahimcesar.cloud/bg-grid-white.svg')] bg-[length:40px_40px] opacity-5 pointer-events-none z-0"></div>
+
+                            <!-- SVG Connections Layer -->
+                            <svg class="connection-lines">
+                                <!-- Conexiones Usuarios -->
+                                <path class="connection-path" d="M 680 450 L 580 450 L 580 400" /> <!-- Usuarios -> Reservaciones -->
+                                <path class="connection-path" d="M 680 480 L 630 480 L 630 250 L 580 250" /> <!-- Usuarios -> Incidentes -->
+                                <path class="connection-path" d="M 750 430 L 750 350" /> <!-- Usuarios -> InvitarAmigos -->
+                                <path class="connection-path" d="M 820 450 L 880 450 L 880 300" /> <!-- Usuarios -> ListadoAdeudos -->
+                                
+                                <!-- Conexiones Reservaciones -->
+                                <path class="connection-path" d="M 440 400 L 400 400 L 400 550 L 370 550" /> <!-- Reservaciones -> ReporteFinanzas -->
+                                <path class="connection-path" d="M 440 380 L 400 380 L 400 250 L 370 250" /> <!-- Reservaciones -> Amenidades -->
+                                
+                                <!-- Conexiones Amenidades -->
+                                <path class="connection-path" d="M 230 250 L 200 250" /> <!-- Amenidades -> Bitacoras -->
+                            </svg>
+
+                            <!-- ERD Tables (Simulated with Divs) -->
+                            
+                            <!-- 1. Usuarios (Central Hub) -->
+                            <div class="erd-table" style="bottom: 50px; right: 250px; width: 160px; border-color: #06b6d4;">
+                                <div class="erd-header">usuarios</div>
+                                <div class="erd-row"><span><span class="erd-pk">*</span>_id</span> <span class="erd-type">objectId</span></div>
+                                <div class="erd-row"><span>nombre</span> <span class="erd-type">string</span></div>
+                                <div class="erd-row"><span>apellido</span> <span class="erd-type">string</span></div>
+                                <div class="erd-row"><span>email</span> <span class="erd-type">string</span></div>
+                                <div class="erd-row"><span>rol</span> <span class="erd-type">string</span></div>
+                                <div class="erd-row"><span>condominio_id</span> <span class="erd-type">string</span></div>
+                                <div class="erd-row"><span>password</span> <span class="erd-type">string</span></div>
+                                <div class="erd-row"><span>perfil_detalle</span> <span class="erd-type">{}</span></div>
+                            </div>
+
+                            <!-- 2. Reservaciones -->
+                            <div class="erd-table" style="bottom: 250px; left: 440px;">
+                                <div class="erd-header">reservaciones</div>
+                                <div class="erd-row"><span><span class="erd-pk">*</span>_id</span> <span class="erd-type">objectId</span></div>
+                                <div class="erd-row"><span>usuario_id</span> <span class="erd-type">string</span></div>
+                                <div class="erd-row"><span>amenidad_id</span> <span class="erd-type">int</span></div>
+                                <div class="erd-row"><span>fecha_evento</span> <span class="erd-type">date</span></div>
+                                <div class="erd-row"><span>estado_pago</span> <span class="erd-type">string</span></div>
+                                <div class="erd-row"><span>costo</span> <span class="erd-type">double</span></div>
+                            </div>
+
+                            <!-- 3. Incidentes -->
+                            <div class="erd-table" style="top: 150px; left: 440px;">
+                                <div class="erd-header">incidentes</div>
+                                <div class="erd-row"><span><span class="erd-pk">*</span>_id</span> <span class="erd-type">objectId</span></div>
+                                <div class="erd-row"><span>usuario_id</span> <span class="erd-type">string</span></div>
+                                <div class="erd-row"><span>asunto</span> <span class="erd-type">string</span></div>
+                                <div class="erd-row"><span>descripcion</span> <span class="erd-type">string</span></div>
+                                <div class="erd-row"><span>estado</span> <span class="erd-type">string</span></div>
+                                <div class="erd-row"><span>evidencia_url</span> <span class="erd-type">string</span></div>
+                            </div>
+
+                            <!-- 4. Invitar Amigos -->
+                            <div class="erd-table" style="top: 150px; right: 250px;">
+                                <div class="erd-header">invitarAmigos</div>
+                                <div class="erd-row"><span><span class="erd-pk">*</span>_id</span> <span class="erd-type">objectId</span></div>
+                                <div class="erd-row"><span>codigo_acceso</span> <span class="erd-type">string</span></div>
+                                <div class="erd-row"><span>usuario_id</span> <span class="erd-type">string</span></div>
+                                <div class="erd-row"><span>nombre_inv</span> <span class="erd-type">string</span></div>
+                                <div class="erd-row"><span>fecha_visita</span> <span class="erd-type">string</span></div>
+                                <div class="erd-row"><span>estado</span> <span class="erd-type">string</span></div>
+                            </div>
+
+                            <!-- 5. Listado Adeudos -->
+                            <div class="erd-table" style="top: 50px; right: 50px;">
+                                <div class="erd-header">listadoAdeudos</div>
+                                <div class="erd-row"><span><span class="erd-pk">*</span>_id</span> <span class="erd-type">objectId</span></div>
+                                <div class="erd-row"><span>usuario_id</span> <span class="erd-type">string</span></div>
+                                <div class="erd-row"><span>monto_total</span> <span class="erd-type">double</span></div>
+                                <div class="erd-row"><span>estado_pago</span> <span class="erd-type">string</span></div>
+                                <div class="erd-row"><span>periodo</span> <span class="erd-type">string</span></div>
+                            </div>
+
+                            <!-- 6. Amenidades -->
+                            <div class="erd-table" style="top: 100px; left: 230px;">
+                                <div class="erd-header">amenidades</div>
+                                <div class="erd-row"><span><span class="erd-pk">*</span>_id</span> <span class="erd-type">objectId</span></div>
+                                <div class="erd-row"><span>nombre</span> <span class="erd-type">string</span></div>
+                                <div class="erd-row"><span>capacidad</span> <span class="erd-type">int</span></div>
+                                <div class="erd-row"><span>reglas</span> <span class="erd-type">{}</span></div>
+                                <div class="erd-row"><span>horario</span> <span class="erd-type">string</span></div>
+                            </div>
+
+                            <!-- 7. Bitacoras -->
+                            <div class="erd-table" style="top: 100px; left: 50px;">
+                                <div class="erd-header">bitacoras</div>
+                                <div class="erd-row"><span><span class="erd-pk">*</span>_id</span> <span class="erd-type">objectId</span></div>
+                                <div class="erd-row"><span>accion</span> <span class="erd-type">string</span></div>
+                                <div class="erd-row"><span>metodo</span> <span class="erd-type">string</span></div>
+                                <div class="erd-row"><span>placas</span> <span class="erd-type">string</span></div>
+                                <div class="erd-row"><span>fecha_hora</span> <span class="erd-type">string</span></div>
+                            </div>
+
+                            <!-- 8. Reporte Finanzas -->
+                            <div class="erd-table" style="bottom: 100px; left: 230px;">
+                                <div class="erd-header">reporteFinanzas</div>
+                                <div class="erd-row"><span><span class="erd-pk">*</span>_id</span> <span class="erd-type">objectId</span></div>
+                                <div class="erd-row"><span>concepto</span> <span class="erd-type">string</span></div>
+                                <div class="erd-row"><span>monto</span> <span class="erd-type">double</span></div>
+                                <div class="erd-row"><span>tipo_mov</span> <span class="erd-type">string</span></div>
+                                <div class="erd-row"><span>evidencia</span> <span class="erd-type">{}</span></div>
+                            </div>
+
+                            <!-- 9. Categorias (Decorativo) -->
+                            <div class="erd-table" style="top: 50px; left: 440px; width: 100px; opacity: 0.7;">
+                                <div class="erd-header">categorias</div>
+                                <div class="erd-row"><span>nombre</span> <span class="erd-type">string</span></div>
+                            </div>
+
+                            <!-- Hover Prompt -->
+                            <div class="absolute bottom-6 left-1/2 -translate-x-1/2 bg-black/80 text-accent px-6 py-2 rounded-full text-sm font-mono border border-accent/30 backdrop-blur-md z-30 group-hover:opacity-0 transition-opacity">
+                                <i data-lucide="mouse-pointer-2" class="inline w-4 h-4 mr-2"></i>
+                                Pasa el mouse para explorar la arquitectura
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL RUBS -->
+    <div id="rubsModal" class="fixed inset-0 z-[100] hidden opacity-0 transition-opacity duration-300">
+        <!-- Backdrop -->
+        <div class="absolute inset-0 bg-black/90 backdrop-blur-md" onclick="closeModal('rubsModal')"></div>
+        
+        <!-- Modal Content -->
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[95%] max-w-6xl bg-cardDark border border-slate-700 rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+            
+            <!-- Header -->
+            <div class="p-6 border-b border-slate-700 flex justify-between items-center bg-slate-900/50">
+                <h2 class="text-3xl font-bold text-white flex items-center gap-3">
+                    <span class="bg-rubs/20 text-rubs p-2 rounded-lg"><i data-lucide="truck" class="w-6 h-6"></i></span>
+                    RUBS: Logística Inteligente
+                </h2>
+                <button onclick="closeModal('rubsModal')" class="text-slate-400 hover:text-white hover:bg-slate-700 p-2 rounded-full transition-colors">
+                    <i data-lucide="x" class="w-8 h-8"></i>
+                </button>
+            </div>
+
+            <!-- Scrollable Body -->
+            <div class="p-8 overflow-y-auto custom-scrollbar">
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-12">
+                    <!-- Problem Statement -->
+                    <div class="space-y-6">
+                        <h3 class="text-2xl font-bold text-red-400 flex items-center gap-2 border-b border-red-400/20 pb-2">
+                            <i data-lucide="alert-triangle"></i> The Challenge
+                        </h3>
+                        
+                        <div class="space-y-4">
+                            <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-800">
+                                <h4 class="text-lg font-bold text-white mb-2">Fleet Visibility</h4>
+                                <ul class="list-disc list-inside text-slate-400 space-y-1 text-base">
+                                    <li>Lack of real-time GPS tracking for active units.</li>
+                                    <li>Difficulty predicting estimated arrival times (ETA).</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-800">
+                                <h4 class="text-lg font-bold text-white mb-2">Driver Communication</h4>
+                                <ul class="list-disc list-inside text-slate-400 space-y-1 text-base">
+                                    <li>Reliance on phone calls/WhatsApp for status updates.</li>
+                                    <li>Lost paperwork and delivery confirmations (PODs).</li>
+                                </ul>
+                            </div>
+
+                            <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-800">
+                                <h4 class="text-lg font-bold text-white mb-2">Data Silos</h4>
+                                <ul class="list-disc list-inside text-slate-400 space-y-1 text-base">
+                                    <li>Maintenance logs separated from dispatch scheduling.</li>
+                                    <li>Inefficient reporting for client billing.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Solution -->
+                    <div class="space-y-6">
+                        <h3 class="text-2xl font-bold text-rubs flex items-center gap-2 border-b border-rubs/20 pb-2">
+                            <i data-lucide="check-circle-2"></i> Our Solution
+                        </h3>
+                        
+                        <div class="space-y-4">
+                            <div class="flex gap-4 p-4 bg-slate-800/30 rounded-xl border border-slate-700/50">
+                                <div class="bg-slate-700/50 p-3 rounded-lg h-fit text-rubs"><i data-lucide="map" class="w-6 h-6"></i></div>
+                                <div>
+                                    <h4 class="text-xl font-bold text-white">Central Dashboard</h4>
+                                    <p class="text-slate-400 mt-1">Real-time map view of all units with status, speed, and geofencing alerts.</p>
+                                </div>
+                            </div>
+
+                            <div class="flex gap-4 p-4 bg-slate-800/30 rounded-xl border border-slate-700/50">
+                                <div class="bg-slate-700/50 p-3 rounded-lg h-fit text-blue-400"><i data-lucide="smartphone" class="w-6 h-6"></i></div>
+                                <div>
+                                    <h4 class="text-xl font-bold text-white">Driver App</h4>
+                                    <p class="text-slate-400 mt-1">Mobile interface for route acceptance, digital POD scanning, and instant messaging.</p>
+                                </div>
+                            </div>
+
+                            <div class="flex gap-4 p-4 bg-slate-800/30 rounded-xl border border-slate-700/50">
+                                <div class="bg-slate-700/50 p-3 rounded-lg h-fit text-yellow-400"><i data-lucide="database" class="w-6 h-6"></i></div>
+                                <div>
+                                    <h4 class="text-xl font-bold text-white">Integrated CMS</h4>
+                                    <p class="text-slate-400 mt-1">Unified database connecting vehicle maintenance schedules with dispatch availability.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Interactive Architecture Diagram -->
+                <div class="bg-black/40 rounded-2xl border border-slate-700 p-8 relative overflow-hidden">
+                    <h3 class="text-2xl font-bold text-white mb-8 text-center">Logistics Data Flow</h3>
+                    
+                    <!-- Diagram Container -->
+                    <div class="relative flex flex-col md:flex-row justify-between items-center gap-8 md:gap-4 max-w-4xl mx-auto">
+                        
+                        <!-- Left Node: Fleet -->
+                        <div class="flex flex-col gap-4 w-full md:w-auto">
+                            <div class="bg-slate-800 border-2 border-rubs p-4 rounded-xl text-center w-full md:w-48 shadow-[0_0_20px_rgba(249,115,22,0.2)]">
+                                <i data-lucide="truck" class="w-8 h-8 text-rubs mx-auto mb-2"></i>
+                                <h4 class="font-bold text-white">Fleet Units</h4>
+                                <p class="text-xs text-slate-400">GPS Telemetry</p>
+                            </div>
+                            <div class="bg-slate-800 border-2 border-blue-400 p-4 rounded-xl text-center w-full md:w-48 shadow-[0_0_20px_rgba(59,130,246,0.2)]">
+                                <i data-lucide="smartphone" class="w-8 h-8 text-blue-400 mx-auto mb-2"></i>
+                                <h4 class="font-bold text-white">Driver App</h4>
+                                <p class="text-xs text-slate-400">Status & PODs</p>
+                            </div>
+                        </div>
+
+                        <!-- Connector Lines (Visual CSS) -->
+                        <div class="hidden md:block w-16 h-1 bg-gradient-to-r from-rubs to-yellow-400"></div>
+
+                        <!-- Center Node: Cloud Core -->
+                        <div class="bg-slate-900 border-2 border-yellow-400 p-8 rounded-full aspect-square flex flex-col items-center justify-center relative z-10 w-48 h-48 shadow-[0_0_40px_rgba(250,204,21,0.3)]">
+                            <div class="absolute inset-0 rounded-full border border-dashed border-slate-600 animate-spin-slow"></div>
+                            <i data-lucide="server" class="w-12 h-12 text-yellow-400 mb-2"></i>
+                            <h4 class="font-bold text-white text-lg">Logistics API</h4>
+                            <p class="text-xs text-slate-400">Real-time Processing</p>
+                        </div>
+
+                        <!-- Connector Lines (Visual CSS) -->
+                        <div class="hidden md:block w-16 h-1 bg-gradient-to-r from-yellow-400 to-green-400"></div>
+
+                        <!-- Right Node: Management -->
+                        <div class="flex flex-col gap-4 w-full md:w-auto">
+                            <div class="bg-slate-800 border-2 border-green-400 p-4 rounded-xl text-center w-full md:w-48 shadow-[0_0_20px_rgba(74,222,128,0.2)]">
+                                <i data-lucide="monitor" class="w-8 h-8 text-green-400 mx-auto mb-2"></i>
+                                <h4 class="font-bold text-white">Dispatch Panel</h4>
+                                <p class="text-xs text-slate-400">Live Map & Scheduling</p>
+                            </div>
+                            <div class="bg-slate-800 border-2 border-green-400 p-4 rounded-xl text-center w-full md:w-48 shadow-[0_0_20px_rgba(74,222,128,0.2)]">
+                                <i data-lucide="user-check" class="w-8 h-8 text-green-400 mx-auto mb-2"></i>
+                                <h4 class="font-bold text-white">Client Portal</h4>
+                                <p class="text-xs text-slate-400">Tracking Access</p>
+                            </div>
+                        </div>
+
+                    </div>
+                    
+                    <!-- Background Lines for connectivity visual -->
+                    <svg class="absolute inset-0 w-full h-full pointer-events-none opacity-20" xmlns="http://www.w3.org/2000/svg">
+                        <line x1="20%" y1="30%" x2="50%" y2="50%" stroke="white" stroke-width="2" />
+                        <line x1="20%" y1="70%" x2="50%" y2="50%" stroke="white" stroke-width="2" />
+                        <line x1="80%" y1="30%" x2="50%" y2="50%" stroke="white" stroke-width="2" />
+                        <line x1="80%" y1="70%" x2="50%" y2="50%" stroke="white" stroke-width="2" />
+                    </svg>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Lightbox for Full Diagram View -->
+    <div id="diagramLightbox" class="fixed inset-0 z-[150] hidden bg-black/95 backdrop-blur-xl flex items-center justify-center p-4" onclick="toggleFullView()">
+        <button class="absolute top-6 right-6 text-white hover:text-accent p-2">
+            <i data-lucide="x" class="w-10 h-10"></i>
+        </button>
+        <img src="Imagen de WhatsApp 2025-11-27 a las 12.40.38_f0075404.jpg" class="max-w-full max-h-full object-contain shadow-2xl rounded-lg border border-slate-700">
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        // Modal Logic
+        function openModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.remove('hidden');
+                // Small delay to allow display:block to apply before opacity transition
+                setTimeout(() => {
+                    modal.classList.remove('opacity-0');
+                }, 10);
+                document.body.style.overflow = 'hidden'; // Prevent background scrolling
+            }
+        }
+
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.add('opacity-0');
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                }, 300); // Wait for transition
+                document.body.style.overflow = 'auto';
+            }
+        }
+
+        // Toggle Full View for Diagram
+        function toggleFullView() {
+            const lightbox = document.getElementById('diagramLightbox');
+            if (lightbox.classList.contains('hidden')) {
+                lightbox.classList.remove('hidden');
+            } else {
+                lightbox.classList.add('hidden');
+            }
+        }
+
+        // Close on ESC key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === "Escape") {
+                closeModal('cuartaModal');
+                closeModal('rubsModal');
+                document.getElementById('diagramLightbox').classList.add('hidden');
+            }
+        });
+
+        // Inicializar Iconos
+        lucide.createIcons();
+
+        // Reveal on Scroll Logic
+        function reveal() {
+            var reveals = document.querySelectorAll(".reveal");
+            for (var i = 0; i < reveals.length; i++) {
+                var windowHeight = window.innerHeight;
+                var elementTop = reveals[i].getBoundingClientRect().top;
+                var elementVisible = 150;
+                if (elementTop < windowHeight - elementVisible) {
+                    reveals[i].classList.add("active");
+                }
+            }
+        }
+        window.addEventListener("scroll", reveal);
+        // Trigger once on load
+        reveal();
+
+        // Carousel Logic
+        const container = document.getElementById('projectsContainer');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+
+        if (container && prevBtn && nextBtn) {
+            prevBtn.addEventListener('click', () => {
+                container.scrollBy({ left: -container.clientWidth, behavior: 'smooth' });
+            });
+            nextBtn.addEventListener('click', () => {
+                container.scrollBy({ left: container.clientWidth, behavior: 'smooth' });
+            });
+
+            // Convert vertical scroll to horizontal scroll when hovering container
+            container.addEventListener('wheel', (evt) => {
+                evt.preventDefault();
+                container.scrollLeft += evt.deltaY;
+            });
+        }
+
+        // Canvas Network Animation Logic
+        const canvas = document.getElementById("neuro");
+        const ctx = canvas.getContext("2d");
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        let particlesArray;
+
+        // Mouse position
+        let mouse = {
+            x: null,
+            y: null,
+            radius: (canvas.height/80) * (canvas.width/80)
+        }
+
+        window.addEventListener('mousemove', 
+            function(event) {
+                mouse.x = event.x;
+                mouse.y = event.y;
+            }
+        );
+
+        // Create particle
+        class Particle {
+            constructor(x, y, directionX, directionY, size, color) {
+                this.x = x;
+                this.y = y;
+                this.directionX = directionX;
+                this.directionY = directionY;
+                this.size = size;
+                this.color = color;
+            }
+            // Method to draw individual particle
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2, false);
+                ctx.fillStyle = '#06b6d4'; // Cyan color
+                ctx.fill();
+            }
+            // Check particle position, check mouse position, move the particle, draw the particle
+            update() {
+                if (this.x > canvas.width || this.x < 0) {
+                    this.directionX = -this.directionX;
+                }
+                if (this.y > canvas.height || this.y < 0) {
+                    this.directionY = -this.directionY;
+                }
+
+                // Check collision detection - mouse position / particle position
+                let dx = mouse.x - this.x;
+                let dy = mouse.y - this.y;
+                let distance = Math.sqrt(dx*dx + dy*dy);
+                if (distance < mouse.radius + this.size){
+                    if (mouse.x < this.x && this.x < canvas.width - this.size * 10) {
+                        this.x += 10;
+                    }
+                    if (mouse.x > this.x && this.x > this.size * 10) {
+                        this.x -= 10;
+                    }
+                    if (mouse.y < this.y && this.y < canvas.height - this.size * 10) {
+                        this.y += 10;
+                    }
+                    if (mouse.y > this.y && this.y > this.size * 10) {
+                        this.y -= 10;
+                    }
+                }
+                this.x += this.directionX;
+                this.y += this.directionY;
+
+                this.draw();
+            }
+        }
+
+        function init() {
+            particlesArray = [];
+            let numberOfParticles = (canvas.height * canvas.width) / 9000;
+            for (let i = 0; i < numberOfParticles; i++) {
+                let size = (Math.random() * 2) + 1;
+                let x = (Math.random() * ((innerWidth - size * 2) - (size * 2)) + size * 2);
+                let y = (Math.random() * ((innerHeight - size * 2) - (size * 2)) + size * 2);
+                let directionX = (Math.random() * 0.5) - 0.25;
+                let directionY = (Math.random() * 0.5) - 0.25;
+                let color = '#06b6d4';
+
+                particlesArray.push(new Particle(x, y, directionX, directionY, size, color));
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            ctx.clearRect(0,0,innerWidth, innerHeight);
+
+            for (let i = 0; i < particlesArray.length; i++) {
+                particlesArray[i].update();
+            }
+            connect();
+        }
+
+        // Draw lines between particles
+        function connect() {
+            let opacityValue = 1;
+            for (let a = 0; a < particlesArray.length; a++) {
+                for (let b = a; b < particlesArray.length; b++) {
+                    let distance = ((particlesArray[a].x - particlesArray[b].x) * (particlesArray[a].x - particlesArray[b].x))
+                    + ((particlesArray[a].y - particlesArray[b].y) * (particlesArray[a].y - particlesArray[b].y));
+                    
+                    if (distance < (canvas.width/7) * (canvas.height/7)) {
+                        opacityValue = 1 - (distance/20000);
+                        ctx.strokeStyle = 'rgba(6, 182, 212,' + opacityValue + ')'; // Cyan lines
+                        ctx.lineWidth = 1;
+                        ctx.beginPath();
+                        ctx.moveTo(particlesArray[a].x, particlesArray[a].y);
+                        ctx.lineTo(particlesArray[b].x, particlesArray[b].y);
+                        ctx.stroke();
+                    }
+                }
+            }
+        }
+
+        window.addEventListener('resize', 
+            function() {
+                canvas.width = innerWidth;
+                canvas.height = innerHeight;
+                mouse.radius = ((canvas.height/80) * (canvas.height/80));
+                init();
+            }
+        );
+
+        window.addEventListener('mouseout',
+            function() {
+                mouse.x = undefined;
+                mouse.y = undefined;
+            }
+        );
+
+        init();
+        animate();
+
+    </script>
+</body>
+</html>
