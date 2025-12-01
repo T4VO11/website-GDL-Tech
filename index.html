@@ -19,11 +19,11 @@
             theme: {
                 extend: {
                     colors: {
-                        bgDark: '#1A1B41',
-                        cardDark: '#1E293B',
-                        accent: '#06b6d4', // Cian
-                        secondary: '#8b5cf6', // Violeta
-                        rubs: '#f97316', // Naranja para RUBS
+                        bgDark: '#0f0518', // Fondo Morado Muy Oscuro (Casi Negro)
+                        cardDark: '#1a1025', // Fondo Tarjetas (Morado Oscuro)
+                        accent: '#a855f7', // Violeta Brillante (Color principal del logo)
+                        secondary: '#f97316', // Naranja Circuito (Detalles del logo)
+                        rubs: '#f97316', // Mantenemos naranja para RUBS (coincide con secondary)
                     },
                     fontFamily: {
                         sans: ['Inter', 'sans-serif'],
@@ -35,27 +35,28 @@
     </script>
 
     <style>
-        /* --- ESTILOS RESTAURADOS --- */
+        /* --- ESTILOS GENERALES --- */
         body {
-            background-color: #1A1B41; /* Fondo oscuro restaurado */
+            background-color: #0f0518; /* Actualizado al nuevo color base */
             color: #e2e8f0;
             overflow-x: hidden;
+            background-image: radial-gradient(circle at 50% 0%, #2e1065 0%, #0f0518 40%); /* Sutil glow morado arriba */
         }
 
-        /* Scrollbar estilo terminal */
+        /* Scrollbar estilo terminal (Adaptado a morado) */
         ::-webkit-scrollbar {
             width: 10px;
             height: 10px;
         }
         ::-webkit-scrollbar-track {
-            background: #0f172a;
+            background: #0f0518;
         }
         ::-webkit-scrollbar-thumb {
-            background: #334155;
+            background: #4c1d95; /* Morado medio */
             border-radius: 5px;
         }
         ::-webkit-scrollbar-thumb:hover {
-            background: #475569;
+            background: #6d28d9;
         }
 
         /* Efecto de parpadeo del cursor */
@@ -86,18 +87,18 @@
             width: 100%;
             height: 100%;
             z-index: -1;
-            opacity: 0.4;
+            opacity: 0.3; /* Un poco más sutil para que resalte el degradado morado */
         }
         
         .glass-nav {
-            background: rgba(26, 27, 65, 0.8);
+            background: rgba(15, 5, 24, 0.8); /* Adaptado a bgDark */
             backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid rgba(168, 85, 247, 0.1); /* Borde violeta sutil */
         }
 
         .code-card:hover {
-            border-color: #06b6d4;
-            box-shadow: 0 0 15px rgba(6, 182, 212, 0.2);
+            border-color: #a855f7; /* Accent Violeta */
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.3); /* Glow Violeta */
             transform: translateY(-5px);
         }
 
@@ -110,89 +111,110 @@
             scrollbar-width: none;
         }
 
-        /* --- ESTILOS DIAGRAMA 3D (NUEVOS) --- */
-        .perspective-container {
-            perspective: 1200px;
-        }
-        .diagram-3d {
-            transform-style: preserve-3d;
-            transform: rotateX(25deg) scale(0.9);
-            transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            background: rgba(15, 23, 42, 0.95); /* Slate 900 casi opaco */
-        }
-        .perspective-container:hover .diagram-3d {
-            transform: rotateX(0deg) scale(1);
-            box-shadow: 0 10px 30px -10px rgba(6, 182, 212, 0.3);
+        /* --- ESTILOS HOLOGRÁFICOS 3D (Adaptados a Violeta/Cian) --- */
+        .holo-container {
+            perspective: 1000px;
+            overflow: visible;
         }
 
-        /* Estilos específicos para las Tablas del ERD */
-        .erd-table {
-            background: rgba(30, 41, 59, 0.8); /* Card Dark */
-            border: 1px solid rgba(148, 163, 184, 0.2);
-            border-radius: 6px;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 10px;
-            color: #cbd5e1;
-            position: absolute;
-            width: 140px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s ease;
-            backdrop-filter: blur(4px);
-        }
-        .erd-table:hover {
-            border-color: #06b6d4; /* Accent color */
-            transform: translateZ(20px); /* Efecto pop-up 3d */
-            box-shadow: 0 10px 15px -3px rgba(6, 182, 212, 0.2);
-            z-index: 50;
-        }
-        .erd-header {
-            background: rgba(15, 23, 42, 0.8);
-            padding: 6px;
-            border-bottom: 1px solid rgba(148, 163, 184, 0.2);
-            font-weight: bold;
-            color: #fff;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-        .erd-header::before {
-            content: '::';
-            color: #06b6d4;
-        }
-        .erd-row {
-            padding: 3px 6px;
-            display: flex;
-            justify-content: space-between;
-            border-bottom: 1px solid rgba(148, 163, 184, 0.05);
-        }
-        .erd-row:last-child {
-            border-bottom: none;
-        }
-        .erd-type {
-            color: #64748b;
-            font-size: 9px;
-        }
-        .erd-pk {
-            color: #f59e0b; /* Yellow for Primary Keys */
-            margin-right: 4px;
+        .holo-plane {
+            transform-style: preserve-3d;
+            transform: rotateX(20deg) scale(0.95);
+            transition: transform 0.5s ease;
+            position: relative;
+            width: 100%;
+            height: 100%;
         }
         
-        /* Líneas de conexión SVG */
-        .connection-lines {
+        .holo-container:hover .holo-plane {
+            transform: rotateX(5deg) scale(1);
+        }
+
+        .holo-table {
+            position: absolute;
+            background: rgba(168, 85, 247, 0.05); /* Fondo violeta muy transparente */
+            border: 1px solid rgba(168, 85, 247, 0.4); /* Borde violeta */
+            color: #e9d5ff; /* Texto lila claro */
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            padding: 0;
+            border-radius: 4px;
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.1), inset 0 0 20px rgba(168, 85, 247, 0.05);
+            backdrop-filter: blur(2px);
+            transition: all 0.3s ease;
+            transform: translateZ(0px);
+            width: 160px;
+        }
+
+        @media (max-width: 768px) {
+            .holo-table {
+                font-size: 8px;
+                width: 100px;
+            }
+        }
+
+        .holo-table:hover {
+            background: rgba(168, 85, 247, 0.15);
+            border-color: #d8b4fe;
+            color: #fff;
+            transform: translateZ(30px) scale(1.05);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5), 0 0 20px rgba(168, 85, 247, 0.4);
+            z-index: 50;
+        }
+
+        .holo-header {
+            background: rgba(168, 85, 247, 0.2);
+            color: #fff;
+            padding: 4px 8px;
+            font-weight: bold;
+            border-bottom: 1px solid rgba(168, 85, 247, 0.3);
+            text-shadow: 0 0 5px rgba(168, 85, 247, 0.8);
+            letter-spacing: 0.5px;
+        }
+
+        .holo-row {
+            padding: 2px 8px;
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(168, 85, 247, 0.1);
+        }
+        .holo-row:last-child { border-bottom: none; }
+        
+        .holo-type { opacity: 0.6; font-size: 8px; }
+        .holo-key { color: #facc15; margin-right: 4px; }
+
+        /* SVG Conectores */
+        .holo-svg {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
             pointer-events: none;
-            z-index: 0;
+            z-index: -1;
         }
-        .connection-path {
+        .holo-line {
+            stroke: rgba(168, 85, 247, 0.3); /* Líneas violetas */
+            stroke-width: 1;
             fill: none;
-            stroke: #475569;
-            stroke-width: 1.5;
-            opacity: 0.6;
+            stroke-dasharray: 5,5;
+            animation: dash 30s linear infinite;
+        }
+        @keyframes dash {
+            to { stroke-dashoffset: -100; }
+        }
+
+        /* Emitter effect */
+        .holo-emitter {
+            position: absolute;
+            bottom: -50px;
+            left: 50%;
+            transform: translateX(-50%) rotateX(90deg);
+            width: 80%;
+            height: 200px;
+            background: radial-gradient(circle, rgba(168, 85, 247, 0.2) 0%, rgba(0,0,0,0) 70%);
+            pointer-events: none;
+            z-index: -2;
         }
     </style>
 </head>
@@ -206,18 +228,24 @@
     <!-- Navegación -->
     <nav class="fixed w-full top-0 z-50 glass-nav transition-all duration-300">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-20"> 
-                <div class="flex-shrink-0 font-mono font-bold text-3xl text-accent"> 
-                    &lt;GDL_Tech /&gt;
+            <div class="flex items-center justify-between h-20 md:h-24"> 
+                <div class="flex-shrink-0 flex items-center gap-3"> 
+                    <!-- LOGO NUEVO -->
+                    <img src="unnamed-removebg-preview (1).png" alt="GDL Tech Logo" class="h-32 md:h-40 w-auto object-contain hover:scale-105 transition-transform">
                 </div>
-                <div class="hidden md:block">
-                    <div class="ml-10 flex items-baseline space-x-8 font-mono text-base"> 
+                <div class="hidden lg:block">
+                    <div class="ml-10 flex items-baseline space-x-8 font-mono text-base md:text-lg"> 
+                        <!-- ORDEN ACTUALIZADO: Inicio -> Equipo -> Nosotros -> Proyectos -> Contacto -->
                         <a href="#home" class="hover:text-accent transition-colors px-3 py-2">~/inicio</a>
                         <a href="#team" class="hover:text-accent transition-colors px-3 py-2">~/equipo</a>
                         <a href="#about" class="hover:text-accent transition-colors px-3 py-2">~/nosotros</a>
                         <a href="#projects" class="hover:text-accent transition-colors px-3 py-2">~/proyectos</a>
                         <a href="#contact" class="text-bgDark bg-accent hover:bg-white hover:text-bgDark transition-all px-4 py-2 rounded font-bold">git push contact</a>
                     </div>
+                </div>
+                <!-- Menú móvil placeholder -->
+                <div class="lg:hidden text-white">
+                    <i data-lucide="menu" class="w-8 h-8"></i>
                 </div>
             </div>
         </div>
